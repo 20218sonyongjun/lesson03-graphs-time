@@ -113,7 +113,7 @@ for index, row in top_3_days.iterrows():
     fig3.add_annotation(
         x=row['날짜'],
         y=row['일관객'],
-        text=f"🏆 {date_str}", # 날짜 표시
+        text=f"🏆 {date_str}",
         showarrow=True,
         arrowhead=2,
         arrowsize=1,
@@ -121,7 +121,7 @@ for index, row in top_3_days.iterrows():
         arrowcolor="red",
         font=dict(size=12, color="red", weight="bold"),
         ax=0,
-        ay=-40 # 텍스트를 위로 조금 띄움
+        ay=-40
     )
 
 # 마우스 오버 시 정보 설정
@@ -138,7 +138,50 @@ st.info("💡 **이 그래프로 알 수 있는 것:** 1년 중 극장가에 관
 st.divider()
 
 # ==========================================
-# [구역 4] 새로운 그래프 추가를 위한 자리
+# [구역 4] 총 관객수 TOP 10 영화 (가로 막대그래프)
 # ==========================================
-st.header("4. (여기에 다음 그래프 제목을 입력하세요)")
+st.header("4. 기간 내 최다 관객 동원 영화 TOP 10")
+
+# 1. 영화별 총 일관객 합계 및 10위권 진입 날수 계산
+top10_movies_summary = df.groupby('영화명').agg(
+    총관객수=('일관객', 'sum'),
+    진입일수=('날짜', 'count')
+).reset_index()
+
+# 2. 총관객수 기준 상위 10개 영화 선택
+top10_movies_summary = top10_movies_summary.nlargest(10, '총관객수')
+
+# 3. 관객이 많은 영화가 위에 오도록 정렬 (Plotly 가로 막대는 y축 순서를 오름차순으로 해야 상단에 큰 값이 위치함)
+top10_movies_summary = top10_movies_summary.sort_values(by='총관객수', ascending=True)
+
+# 4. 가로 막대그래프 생성
+fig4 = px.bar(
+    top10_movies_summary,
+    x='총관객수',
+    y='영화명',
+    orientation='h',
+    custom_data=['진입일수'], # hover 시 보여줄 추가 데이터 등록
+    title="기간 내 일관객 합계 TOP 10 영화"
+)
+
+# 5. 마우스 오버(Hover) 시 10위권 진입 날수 포함하여 정보 표시
+fig4.update_traces(
+    hovertemplate="<b>영화명:</b> %{y}<br><b>총 관객수:</b> %{x:,}명<br><b>10위권 진입 날수:</b> %{customdata[0]}일<extra></extra>"
+)
+
+# Y축 라벨 정리
+fig4.update_layout(yaxis_title="영화명", xaxis_title="총 관객수 (명)")
+
+# 그래프 출력
+st.plotly_chart(fig4, use_container_width=True)
+
+# 인사이트 문구 자리
+st.info("💡 **이 그래프로 알 수 있는 것:** 기간 내 가장 많은 선택을 받은 대흥행작 목록과 함께, 단기간 폭발적인 관객을 모았는지 혹은 장기 흥행(롱런)을 이루어냈는지를 진입 날수를 통해 비교할 수 있습니다.")
+
+st.divider()
+
+# ==========================================
+# [구역 5] 새로운 그래프 추가를 위한 자리
+# ==========================================
+st.header("5. (여기에 다음 그래프 제목을 입력하세요)")
 st.write("앞으로 이 아래에 새로운 데이터 분석 그래프와 코드를 추가해 나가면 됩니다.")
