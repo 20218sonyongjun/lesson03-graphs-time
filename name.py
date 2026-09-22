@@ -151,7 +151,7 @@ top10_movies_summary = df.groupby('영화명').agg(
 # 2. 총관객수 기준 상위 10개 영화 선택
 top10_movies_summary = top10_movies_summary.nlargest(10, '총관객수')
 
-# 3. 관객이 많은 영화가 위에 오도록 정렬 (Plotly 가로 막대는 y축 순서를 오름차순으로 해야 상단에 큰 값이 위치함)
+# 3. 관객이 많은 영화가 위에 오도록 정렬
 top10_movies_summary = top10_movies_summary.sort_values(by='총관객수', ascending=True)
 
 # 4. 가로 막대그래프 생성
@@ -160,16 +160,15 @@ fig4 = px.bar(
     x='총관객수',
     y='영화명',
     orientation='h',
-    custom_data=['진입일수'], # hover 시 보여줄 추가 데이터 등록
+    custom_data=['진입일수'],
     title="기간 내 일관객 합계 TOP 10 영화"
 )
 
-# 5. 마우스 오버(Hover) 시 10위권 진입 날수 포함하여 정보 표시
+# 5. 마우스 오버 시 정보 설정
 fig4.update_traces(
     hovertemplate="<b>영화명:</b> %{y}<br><b>총 관객수:</b> %{x:,}명<br><b>10위권 진입 날수:</b> %{customdata[0]}일<extra></extra>"
 )
 
-# Y축 라벨 정리
 fig4.update_layout(yaxis_title="영화명", xaxis_title="총 관객수 (명)")
 
 # 그래프 출력
@@ -181,7 +180,60 @@ st.info("💡 **이 그래프로 알 수 있는 것:** 기간 내 가장 많은 
 st.divider()
 
 # ==========================================
-# [구역 5] 새로운 그래프 추가를 위한 자리
+# [구역 5] 월x요일별 일관객 합계 히트맵
 # ==========================================
-st.header("5. (여기에 다음 그래프 제목을 입력하세요)")
+st.header("5. 월×요일별 관객수 분포 (히트맵)")
+
+# 1. 날짜에서 '월'과 '요일' 추출
+heatmap_df = df.copy()
+heatmap_df['월'] = heatmap_df['날짜'].dt.month.astype(str) + "월"
+# day_name()으로 요일을 구한 뒤 한글로 매핑
+weekday_map = {
+    'Monday': '월요일', 'Tuesday': '화요일', 'Wednesday': '수요일',
+    'Thursday': '목요일', 'Friday': '금요일', 'Saturday': '토요일', 'Sunday': '일요일'
+}
+heatmap_df['요일'] = heatmap_df['날짜'].dt.day_name().map(weekday_map)
+
+# 2. 월 및 요일 정렬 순서 지정
+month_order = [f"{i}월" for i in range(1, 13)]
+weekday_order = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일']
+
+# 3. 월×요일별 일관객 합계 피벗 테이블 생성
+pivot_df = heatmap_df.pivot_table(
+    index='월', 
+    columns='요일', 
+    values='일관객', 
+    aggfunc='sum'
+).reindex(index=month_order, columns=weekday_order)
+
+# 4. 히트맵 생성 (Blues 색상 팔레트: 수치가 클수록 진한 색)
+fig5 = px.imshow(
+    pivot_df,
+    labels=dict(x="요일", y="월", color="관객수 합계"),
+    x=weekday_order,
+    y=month_order,
+    color_continuous_scale="Blues",
+    title="월별·요일별 극장 관객수 합계 분포"
+)
+
+# 마우스 오버 시 정보 설정
+fig5.update_traces(
+    hovertemplate="<b>%{y} %{x}</b><br><b>관객수 합계:</b> %{z:,}명<extra></extra>"
+)
+
+# 그래프 레이아웃 설정
+fig5.update_layout(xaxis_title="요일", yaxis_title="월")
+
+# 그래프 출력
+st.plotly_chart(fig5, use_container_width=True)
+
+# 인사이트 문구 자리
+st.info("💡 **이 그래프로 알 수 있는 것:** 연중 어떤 달의 어떤 요일에 극장 관객 집중도가 가장 높은지(예: 여름 성수기 주말, 명절 연휴 등) 직관적으로 파악할 수 있습니다.")
+
+st.divider()
+
+# ==========================================
+# [구역 6] 새로운 그래프 추가를 위한 자리
+# ==========================================
+st.header("6. (여기에 다음 그래프 제목을 입력하세요)")
 st.write("앞으로 이 아래에 새로운 데이터 분석 그래프와 코드를 추가해 나가면 됩니다.")
